@@ -55,7 +55,7 @@ function obd_prispevky_settings_page()
                 <li><code>limit="5"</code> – zobrazí max. 5 záznamů</li>
                 <li><code>sort="rok"</code> nebo <code>sort="autor"</code> nebo <code>sort="id"</code> (či více, oddělených čárkou, např. <code>sort="rok,autor"</code>)</li>
                 <li><code>order="asc"</code> nebo <code>order="desc"</code> (pokud je více polí ve <code>sort</code>, pak oddělených čárkou, např. <code>order="desc,asc"</code>)</li>
-                <li><code>filter="toy"</code> – vyhledá řádky obsahující řetězec "pepa" (necitlivě na velikost písmen)</li>
+                <li><code>filter="pepa"</code> – vyhledá řádky obsahující řetězec "pepa" (necitlivě na velikost písmen)</li>
                 <li><code>filter_field="nazev"</code> – pokud zadáno, vyhledá pouze v konkrétním poli (např. "nazev", "autor" apod.). Pro vyhledávání ve všech polích použijte hodnotu "all".</li>
             </ul>
             <p>Příklad: <code>[obd_prispevky sort="rok,autor" order="desc,asc" limit="10" filter="pepa" filter_field="all"]</code></p>
