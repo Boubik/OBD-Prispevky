@@ -2,10 +2,12 @@
 
 /**
  * Plugin Name: OBD Příspěvky
- * Description: Plugin pro načítání XML (s <zaznam>), výpis podle jedné textové šablony, vícenásobné řazení a nyní také filtrování přes shortcode (např. sort="rok,autor" order="desc,asc", filter="toy", filter_field="nazev").
- * Version: 1.0
+ * Plugin URI: https://github.com/Boubik/OBD-Prispevky
+ * Description: Plugin pro načítání XML dat a jejich zobrazení s filtrováním a řazením.
+ * Version: 1.0.0
  * Author: Boubik
  */
+
 
 add_action('admin_menu', 'obd_prispevky_menu');
 function obd_prispevky_menu()
