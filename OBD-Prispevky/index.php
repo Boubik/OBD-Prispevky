@@ -189,14 +189,16 @@ function obd_sort_records(&$zaznamy, $sort, $order)
 add_shortcode('obd_prispevky', 'obd_prispevky_shortcode');
 function obd_prispevky_shortcode($atts)
 {
-    // Parametry shortcodu
+    // Extend shortcode attributes with filter parameters
     $atts = shortcode_atts(array(
-        'limit' => -1,     // -1 = neomezeně
-        'sort'  => '',     // např. "rok,autor"
-        'order' => 'asc',  // např. "desc,asc"
+        'limit'        => -1,     // -1 = unlimited
+        'sort'         => '',     // e.g., "rok,autor"
+        'order'        => 'asc',  // e.g., "desc,asc"
+        'filter'       => '',     // search term, e.g., "toy"
+        'filter_field' => 'all',  // specific field name like "nazev" or "autor"; "all" to search everywhere
     ), $atts);
 
-    // Načteme uložené XML a šablonu
+    // Load saved XML and template
     $xml_data = get_option('obd_xml_data', '');
     $template = get_option('obd_template', '');
 
@@ -211,21 +213,43 @@ function obd_prispevky_shortcode($atts)
         return '<p>V XML nebyly nalezeny žádné &lt;zaznam&gt; elementy.</p>';
     }
 
-    // Převedeme <zaznam> do pole
+    // Convert <zaznam> elements to an array
     $zaznamy = [];
     foreach ($xml->zaznam as $z) {
         $zaznamy[] = $z;
     }
 
-    // Provedeme multi-level řazení
+    // Filter records if a search term is provided
+    if (!empty($atts['filter'])) {
+        $search = strtolower($atts['filter']);
+        $field  = $atts['filter_field'];
+        $zaznamy = array_values(array_filter($zaznamy, function ($z) use ($search, $field) {
+            $placeholders = obd_build_placeholders($z);
+            if ($field === 'all') {
+                // Check every field for the search term
+                foreach ($placeholders as $value) {
+                    if (stripos($value, $search) !== false) {
+                        return true;
+                    }
+                }
+                return false;
+            } else {
+                // Build the key name with curly braces (e.g., {nazev})
+                $key = '{' . $field . '}';
+                return isset($placeholders[$key]) && stripos($placeholders[$key], $search) !== false;
+            }
+        }));
+    }
+
+    // Multi-level sorting
     obd_sort_records($zaznamy, $atts['sort'], $atts['order']);
 
-    // Limit
+    // Apply limit if set
     if ($atts['limit'] > 0) {
         $zaznamy = array_slice($zaznamy, 0, $atts['limit']);
     }
 
-    // Výstup
+    // Build output using the template for each record
     $output = '';
     foreach ($zaznamy as $zaznam) {
         $output .= obd_parse_template($template, $zaznam);
