@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: OBD Příspěvky
- * Description: Plugin pro načítání XML (s <zaznam>), výpis podle jedné textové šablony, a vícenásobné řazení přes shortcode (např. sort="rok,autor" order="desc,asc").
+ * Description: Plugin pro načítání XML (s <zaznam>), výpis podle jedné textové šablony, vícenásobné řazení a nyní také filtrování přes shortcode (např. sort="rok,autor" order="desc,asc", filter="toy", filter_field="nazev").
  * Version: 1.0
  * Author: Boubik
  */
@@ -46,7 +46,7 @@ function obd_prispevky_settings_page()
 
             <h2>Šablona výpisu (pseudo kód)</h2>
             <p>Zde definujte, jak se má každý &lt;zaznam&gt; zobrazit.
-                Můžete používat HTML, &lt;br&gt;, a placeholdery {autor}, {nazev}, {rok}, {issn}, {zdroj}, {cislo}, {id} atd.</p>
+                Můžete používat HTML, &lt;br&gt; a placeholdery {autor}, {nazev}, {rok}, {issn}, {zdroj}, {cislo}, {id} atd.</p>
             <textarea name="obd_template" rows="6" cols="100"><?php echo esc_textarea($template); ?></textarea>
 
             <h2>Jak použít shortcode</h2>
@@ -54,9 +54,11 @@ function obd_prispevky_settings_page()
             <ul style="list-style: disc; margin-left: 20px;">
                 <li><code>limit="5"</code> – zobrazí max. 5 záznamů</li>
                 <li><code>sort="rok"</code> nebo <code>sort="autor"</code> nebo <code>sort="id"</code> (či více, oddělených čárkou, např. <code>sort="rok,autor"</code>)</li>
-                <li><code>order="asc"</code> nebo <code>order="desc"</code> (pokud je více polí v <code>sort</code>, pak je oddělte čárkou, např. <code>order="desc,asc"</code>)</li>
+                <li><code>order="asc"</code> nebo <code>order="desc"</code> (pokud je více polí ve <code>sort</code>, pak oddělených čárkou, např. <code>order="desc,asc"</code>)</li>
+                <li><code>filter="toy"</code> – vyhledá řádky obsahující řetězec "pepa" (necitlivě na velikost písmen)</li>
+                <li><code>filter_field="nazev"</code> – pokud zadáno, vyhledá pouze v konkrétním poli (např. "nazev", "autor" apod.). Pro vyhledávání ve všech polích použijte hodnotu "all".</li>
             </ul>
-            <p>Příklad: <code>[obd_prispevky sort="rok,autor" order="desc,asc" limit="10"]</code></p>
+            <p>Příklad: <code>[obd_prispevky sort="rok,autor" order="desc,asc" limit="10" filter="pepa" filter_field="all"]</code></p>
 
             <?php submit_button('Uložit nastavení'); ?>
         </form>
@@ -165,9 +167,6 @@ function obd_sort_records(&$zaznamy, $sort, $order)
                 $cmp = $idA <=> $idB;
             } else {
                 // Pokud chcete další pole (např. 'cislo'), přidáte sem
-                // Třeba:
-                // if ($field === 'cislo') ...
-                // Jinak 0 => nerozhoduje
                 $cmp = 0;
             }
 
@@ -178,7 +177,6 @@ function obd_sort_records(&$zaznamy, $sort, $order)
                 }
                 return $cmp;
             }
-            // jinak pokračujeme dalším polem v $sortFields
         }
         // Pokud jsme došli až sem, znamená to, že všechny pole byly stejné => 0
         return 0;
@@ -189,16 +187,16 @@ function obd_sort_records(&$zaznamy, $sort, $order)
 add_shortcode('obd_prispevky', 'obd_prispevky_shortcode');
 function obd_prispevky_shortcode($atts)
 {
-    // Extend shortcode attributes with filter parameters
+    // Rozšíříme parametry shortcodu o filtrování
     $atts = shortcode_atts(array(
-        'limit'        => -1,     // -1 = unlimited
-        'sort'         => '',     // e.g., "rok,autor"
-        'order'        => 'asc',  // e.g., "desc,asc"
-        'filter'       => '',     // search term, e.g., "toy"
-        'filter_field' => 'all',  // specific field name like "nazev" or "autor"; "all" to search everywhere
+        'limit'        => -1,     // -1 = neomezeně
+        'sort'         => '',     // např. "rok,autor"
+        'order'        => 'asc',  // např. "desc,asc"
+        'filter'       => '',     // vyhledávací výraz, např. "toy"
+        'filter_field' => 'all',  // konkrétní pole, např. "nazev" nebo "autor". "all" znamená hledat ve všech polích
     ), $atts);
 
-    // Load saved XML and template
+    // Načteme uložené XML a šablonu
     $xml_data = get_option('obd_xml_data', '');
     $template = get_option('obd_template', '');
 
@@ -213,20 +211,20 @@ function obd_prispevky_shortcode($atts)
         return '<p>V XML nebyly nalezeny žádné &lt;zaznam&gt; elementy.</p>';
     }
 
-    // Convert <zaznam> elements to an array
+    // Převedeme <zaznam> do pole
     $zaznamy = [];
     foreach ($xml->zaznam as $z) {
         $zaznamy[] = $z;
     }
 
-    // Filter records if a search term is provided
+    // Filtrace záznamů, pokud je nastaven vyhledávací výraz
     if (!empty($atts['filter'])) {
         $search = strtolower($atts['filter']);
         $field  = $atts['filter_field'];
         $zaznamy = array_values(array_filter($zaznamy, function ($z) use ($search, $field) {
             $placeholders = obd_build_placeholders($z);
             if ($field === 'all') {
-                // Check every field for the search term
+                // Prohledáme všechna pole
                 foreach ($placeholders as $value) {
                     if (stripos($value, $search) !== false) {
                         return true;
@@ -234,22 +232,21 @@ function obd_prispevky_shortcode($atts)
                 }
                 return false;
             } else {
-                // Build the key name with curly braces (e.g., {nazev})
                 $key = '{' . $field . '}';
                 return isset($placeholders[$key]) && stripos($placeholders[$key], $search) !== false;
             }
         }));
     }
 
-    // Multi-level sorting
+    // Multi-level řazení
     obd_sort_records($zaznamy, $atts['sort'], $atts['order']);
 
-    // Apply limit if set
+    // Aplikace limitu
     if ($atts['limit'] > 0) {
         $zaznamy = array_slice($zaznamy, 0, $atts['limit']);
     }
 
-    // Build output using the template for each record
+    // Výstup
     $output = '';
     foreach ($zaznamy as $zaznam) {
         $output .= obd_parse_template($template, $zaznam);
