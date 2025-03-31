@@ -94,10 +94,12 @@ function obd_build_placeholders($zaznam)
             $fullName = trim(preg_replace('/\s+/', ' ', $fullName));
             if ($fullName !== '') {
                 $authors[] = $fullName;
+                $authors_better[] = '<span style="font-variant: small-caps;">' . (string)$autor->prijmeni . '</span>, ' . (string)$autor->jmeno;
             }
         }
     }
     $autori = implode(', ', $authors);
+    $authori_better = implode(', ', $authors_better);
 
     // Tituly
     $titles = array();
@@ -116,6 +118,19 @@ function obd_build_placeholders($zaznam)
     $zdroj = isset($zaznam->zdroj_nazev) ? (string)$zaznam->zdroj_nazev : '';
     $cislo = isset($zaznam->cislo)       ? (string)$zaznam->cislo       : '';
 
+    $first_autor = isset($zaznam->autor_list->autor[0]) ? $zaznam->autor_list->autor[0] : null;
+    $jmeno = $prijmeni = $titul_pred = $titul_za = '';
+    if ($first_autor) {
+        $jmeno = isset($first_autor->jmeno) ? (string)$first_autor->jmeno : '';
+        $prijmeni = isset($first_autor->prijmeni) ? (string)$first_autor->prijmeni : '';
+        $titul_pred = isset($first_autor->titul_pred) ? (string)$first_autor->titul_pred : '';
+        $titul_za = isset($first_autor->titul_za) ? (string)$first_autor->titul_za : '';
+    }
+
+    $misto = isset($zaznam->misto) ? (string)$zaznam->misto : '';
+    $nakladatel = isset($zaznam->nakladatel) ? (string)$zaznam->nakladatel : '';
+    $isbn = isset($zaznam->isbn) ? (string)$zaznam->isbn : '';
+
     return array(
         '{id}'    => $id,
         '{autor}' => $autori,
@@ -124,6 +139,14 @@ function obd_build_placeholders($zaznam)
         '{issn}'  => $issn,
         '{zdroj}' => $zdroj,
         '{cislo}' => $cislo,
+        '{jmeno}' => $jmeno,
+        '{prijmeni}' => $prijmeni,
+        '{titul_pred}' => $titul_pred,
+        '{titul_za}' => $titul_za,
+        '{misto}' => $misto,
+        '{nakladatel}' => $nakladatel,
+        '{isbn}' => $isbn,
+        '{autor_better}' => $authori_better,
     );
 }
 
