@@ -127,8 +127,8 @@ function obd_build_placeholders($zaznam)
         $titul_za = isset($first_autor->titul_za) ? (string)$first_autor->titul_za : '';
     }
 
-    $misto = isset($zaznam->misto) ? (string)$zaznam->misto : '';
-    $nakladatel = isset($zaznam->nakladatel) ? (string)$zaznam->nakladatel : '';
+    $misto = isset($zaznam->vydavatel_mesto) ? (string)$zaznam->vydavatel_mesto : '';
+    $nakladatel = isset($zaznam->vydavatel_nazev) ? (string)$zaznam->vydavatel_nazev : '';
     $isbn = isset($zaznam->isbn) ? (string)$zaznam->isbn : '';
 
     return array(
