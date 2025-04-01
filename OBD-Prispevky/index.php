@@ -288,9 +288,19 @@ function obd_prispevky_shortcode($atts)
     // Multi-level řazení
     obd_sort_records($zaznamy, $atts['sort'], $atts['order']);
 
-    // Aplikace limitu
-    if ($atts['limit'] > 0) {
-        $zaznamy = array_slice($zaznamy, 0, $atts['limit']);
+    // Aplikace limitu: Podporujeme formát "count" nebo "count,offset"
+    if (is_string($atts['limit']) && strpos($atts['limit'], ',') !== false) {
+        $parts = array_map('trim', explode(',', $atts['limit']));
+        $count = (int)$parts[0];
+        $offset = isset($parts[1]) ? (int)$parts[1] : 0;
+        if ($count > 0) {
+            $zaznamy = array_slice($zaznamy, $offset, $count);
+        }
+    } else {
+        $limit = (int)$atts['limit'];
+        if ($limit > 0) {
+            $zaznamy = array_slice($zaznamy, 0, $limit);
+        }
     }
 
     // Výstup
