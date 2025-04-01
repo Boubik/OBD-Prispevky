@@ -299,21 +299,21 @@ function obd_prispevky_shortcode($atts)
 
     // Filtrace záznamů, pokud je nastaven vyhledávací výraz
     if (!empty($atts['filter'])) {
-        $search = strtolower($atts['filter']);
+        // Normalizujeme hledaný výraz: odstraníme diakritiku a převedeme na malá písmena
+        $search = obd_normalize_string($atts['filter']);
         $field  = $atts['filter_field'];
         $zaznamy = array_values(array_filter($zaznamy, function ($z) use ($search, $field) {
             $placeholders = obd_build_placeholders($z);
             if ($field === 'all') {
-                // Prohledáme všechna pole
                 foreach ($placeholders as $value) {
-                    if (stripos($value, $search) !== false) {
+                    if (strpos(obd_normalize_string($value), $search) !== false) {
                         return true;
                     }
                 }
                 return false;
             } else {
                 $key = '{' . $field . '}';
-                return isset($placeholders[$key]) && stripos($placeholders[$key], $search) !== false;
+                return isset($placeholders[$key]) && (strpos(obd_normalize_string($placeholders[$key]), $search) !== false);
             }
         }));
     }
@@ -344,4 +344,12 @@ function obd_prispevky_shortcode($atts)
     }
 
     return $output;
+}
+
+// Nová funkce: Normalizuje řetězec odstraněním diakritiky a převedením na malá písmena
+function obd_normalize_string($string)
+{
+    // Převod pomocí iconv: nahrazení diakritiky na odpovídající ASCII znaky
+    $normalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $string);
+    return strtolower($normalized);
 }
