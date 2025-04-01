@@ -48,7 +48,7 @@ function obd_prispevky_settings_page()
             <p>Pokud chcete použít jiné šablony pro různé typy záznamů (např. ČLÁNEK, MONOGRAFIE...), zadejte je zde.</p>
             <?php
             $templates_by_forma = get_option('obd_templates_by_forma', array());
-            $form_types = ['ČLÁNEK', 'KONFERENČNÍ PŘÍSPĚVEK', 'MONOGRAFIE', 'VÝZKUMNÁ ZPRÁVA', 'USPOŘÁDÁNÍ', 'PŘÍSPĚVEK VE SBORNÍKU', 'DEFAULT'];
+            $form_types = ['ČLÁNEK', 'KONFERENČNÍ PŘÍSPĚVEK', 'MONOGRAFIE', 'VÝZKUMNÁ ZPRÁVA', 'PŘÍSPĚVEK VE SBORNÍKU', 'DEFAULT'];
             foreach ($form_types as $form) {
                 $val = isset($templates_by_forma[$form]) ? esc_textarea($templates_by_forma[$form]) : '';
                 echo "<h3>$form</h3>";
