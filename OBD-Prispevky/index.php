@@ -66,14 +66,13 @@ function obd_prispevky_settings_page()
             <h2>Jak použít shortcode</h2>
             <p>Vložte <code>[obd_prispevky]</code> do stránky/příspěvku. Volitelné parametry:</p>
             <ul style="list-style: disc; margin-left: 20px;">
-                <li><code>limit="5"</code> – zobrazí max. 5 záznamů</li>
-                <li><code>sort="rok"</code> nebo <code>sort="autor"</code> nebo <code>sort="id"</code> (či více, oddělených čárkou, např. <code>sort="rok,autor"</code>)</li>
-                <li><code>order="asc"</code> nebo <code>order="desc"</code> (pokud je více polí ve <code>sort</code>, pak oddělených čárkou, např. <code>order="desc,asc"</code>)</li>
-                <li><code>filter="pepa"</code> – vyhledá řádky obsahující řetězec "pepa" (necitlivě na velikost písmen)</li>
-                <li><code>filter_field="nazev"</code> – pokud zadáno, vyhledá pouze v konkrétním poli (např. "nazev", "autor" apod.). Pro vyhledávání ve všech polích použijte hodnotu "all".</li>
+                <li><code>limit="5"</code> – zobrazí prvních 5 záznamů. Pro nastavení offsetu a počtu záznamů použijte formát <code>limit="offset,počet"</code>, např. <code>limit="5,10"</code> znamená, že se přeskočí prvních 5 záznamů a zobrazí se následujících 10.</li>
+                <li><code>sort="rok"</code> nebo <code>sort="autor"</code> nebo <code>sort="id"</code> (případně více, oddělených čárkou, např. <code>sort="rok,autor"</code>).</li>
+                <li><code>order="asc"</code> nebo <code>order="desc"</code> (pokud je více polí ve <code>sort</code>, pak oddělených čárkou, např. <code>order="desc,asc"</code>).</li>
+                <li><code>filter="pepa"</code> – vyhledá záznamy obsahující řetězec "pepa" (necitlivě na velikost písmen).</li>
+                <li><code>filter_field="nazev"</code> – vyhledá pouze v konkrétním poli (např. "nazev", "autor" apod.). Pro vyhledávání ve všech polích použijte hodnotu "all".</li>
             </ul>
-            <p>Příklad: <code>[obd_prispevky sort="rok,autor" order="desc,asc" limit="10" filter="pepa" filter_field="all"]</code></p>
-
+            <p>Příklad: <code>[obd_prispevky sort="rok,autor" order="desc,asc" limit="10,10" filter="pepa" filter_field="all"]</code></p>
             <?php submit_button('Uložit nastavení'); ?>
         </form>
     </div>
@@ -288,11 +287,11 @@ function obd_prispevky_shortcode($atts)
     // Multi-level řazení
     obd_sort_records($zaznamy, $atts['sort'], $atts['order']);
 
-    // Aplikace limitu: Podporujeme formát "count" nebo "count,offset"
+    // Aplikace limitu: Podporujeme formát "offset,count" nebo "count"
     if (is_string($atts['limit']) && strpos($atts['limit'], ',') !== false) {
         $parts = array_map('trim', explode(',', $atts['limit']));
-        $count = (int)$parts[0];
-        $offset = isset($parts[1]) ? (int)$parts[1] : 0;
+        $offset = (int)$parts[0];
+        $count = isset($parts[1]) ? (int)$parts[1] : 0;
         if ($count > 0) {
             $zaznamy = array_slice($zaznamy, $offset, $count);
         }
