@@ -131,6 +131,18 @@ function obd_build_placeholders($zaznam)
         $titul_za = isset($first_autor->titul_za) ? (string)$first_autor->titul_za : '';
     }
 
+    // Sestavení placeholderu {urls} s URL z odkaz_list
+    $urls = array();
+    if (isset($zaznam->odkaz_list->odkaz)) {
+        foreach ($zaznam->odkaz_list->odkaz as $odkaz) {
+            $url_value = trim((string)$odkaz->url);
+            if (!empty($url_value)) {
+                $urls[] = '<a href="' . $url_value . '" target="_blank">' . $url_value . '</a>';
+            }
+        }
+    }
+    $urls_str = implode(', ', $urls);
+
     return array(
         '{id}'    => isset($zaznam['id']) ? (string)$zaznam['id'] : '',
         '{autor}' => $autori,
@@ -148,6 +160,7 @@ function obd_build_placeholders($zaznam)
         '{isbn}' => isset($zaznam->isbn) ? (string)$zaznam->isbn : '',
         '{autor_better}' => $authori_better,
         '{literarni_forma}' => isset($zaznam->literarni_forma) ? (string)$zaznam->literarni_forma : '',
+        '{urls}' => $urls_str,
     );
 }
 
