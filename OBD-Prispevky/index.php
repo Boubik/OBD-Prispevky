@@ -73,6 +73,27 @@ function obd_prispevky_settings_page()
                 <li><code>filter_field="nazev"</code> – vyhledá pouze v konkrétním poli (např. "nazev", "autor" apod.). Pro vyhledávání ve všech polích použijte hodnotu "all".</li>
             </ul>
             <p>Příklad: <code>[obd_prispevky sort="rok,autor" order="desc,asc" limit="10,10" filter="pepa" filter_field="all"]</code></p>
+
+            <h2>Příručka pro uživatele: Seznam placeholderů</h2>
+            <ul style="list-style: disc; margin-left: 20px;">
+                <li><code>{id}</code> – ID záznamu (atribut <code>&lt;zaznam id="..."&gt;</code>).</li>
+                <li><code>{autor}</code> – Seznam autorů, oddělených čárkou.</li>
+                <li><code>{autor_better}</code> – Formátovaná verze autora: příjmení (malými kapitálkami), následované křestním jménem.</li>
+                <li><code>{nazev}</code> – Název záznamu, složený z obsahu jednotlivých <code>&lt;titul&gt;</code> elementů v <code>&lt;titul_list&gt;</code>.</li>
+                <li><code>{rok}</code> – Rok vydání (načteno z <code>&lt;rok&gt;</code>).</li>
+                <li><code>{issn}</code> – ISSN číslo (načteno z <code>&lt;issn&gt;</code>).</li>
+                <li><code>{zdroj}</code> – Název zdroje, např. časopis (načteno z <code>&lt;zdroj_nazev&gt;</code>).</li>
+                <li><code>{cislo}</code> – Číslo vydání (načteno z <code>&lt;cislo&gt;</code>).</li>
+                <li><code>{jmeno}</code> – Křestní jméno prvního autora.</li>
+                <li><code>{prijmeni}</code> – Příjmení prvního autora.</li>
+                <li><code>{titul_pred}</code> – Titul před jménem prvního autora.</li>
+                <li><code>{titul_za}</code> – Titul za jménem prvního autora.</li>
+                <li><code>{misto}</code> – Místo vydání (načteno z <code>&lt;vydavatel_mesto&gt;</code>).</li>
+                <li><code>{nakladatel}</code> – Název vydavatele (načteno z <code>&lt;vydavatel_nazev&gt;</code>).</li>
+                <li><code>{isbn}</code> – ISBN číslo (načteno z <code>&lt;isbn&gt;</code>).</li>
+                <li><code>{literarni_forma}</code> – Literární forma záznamu, např. "ČLÁNEK", "MONOGRAFIE", "VÝZKUMNÁ ZPRÁVA", "KONFERENČNÍ PŘÍSPĚVEK", "PŘÍSPĚVEK VE SBORNÍKU".</li>
+                <li><code>{urls}</code> – Seznam URL z <code>&lt;odkaz_list&gt;</code>, každá URL je zobrazená jako HTML odkaz, oddělená čárkou a mezerou.</li>
+            </ul>
             <?php submit_button('Uložit nastavení'); ?>
         </form>
     </div>
