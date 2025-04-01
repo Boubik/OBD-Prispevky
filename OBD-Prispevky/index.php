@@ -32,11 +32,13 @@ function obd_prispevky_settings_page()
     if (isset($_POST['obd_template'])) {
         update_option('obd_template', stripslashes($_POST['obd_template']));
     }
+    if (isset($_POST['obd_templates_by_forma']) && is_array($_POST['obd_templates_by_forma'])) {
+        update_option('obd_templates_by_forma', array_map('stripslashes', $_POST['obd_templates_by_forma']));
+    }
 
     // Načtení hodnot
     $xml_data  = get_option('obd_xml_data', '');
     $template  = get_option('obd_template', '');
-
 ?>
     <div class="wrap">
         <h1>OBD Příspěvky - Nastavení</h1>
@@ -51,6 +53,25 @@ function obd_prispevky_settings_page()
                 Můžete používat HTML, &lt;br&gt; a placeholdery {autor}, {nazev}, {rok}, {issn}, {zdroj}, {cislo}, {id} atd.</p>
             <textarea name="obd_template" rows="6" cols="100"><?php echo esc_textarea($template); ?></textarea>
 
+            <h2>Alternativní šablony podle literární formy</h2>
+            <p>Pokud chcete použít jiné šablony pro různé typy záznamů (např. ČLÁNEK, MONOGRAFIE...), zadejte je zde.</p>
+            <?php
+            $templates_by_forma = get_option('obd_templates_by_forma', array());
+            $form_types = ['ČLÁNEK', 'KONFERENČNÍ PŘÍSPĚVEK', 'MONOGRAFIE', 'DEFAULT'];
+            foreach ($form_types as $form) {
+                $val = isset($templates_by_forma[$form]) ? esc_textarea($templates_by_forma[$form]) : '';
+                echo "<h3>$form</h3>";
+                echo "<textarea name=\"obd_templates_by_forma[$form]\" rows=\"4\" cols=\"100\">$val</textarea>";
+            }
+            ?>
+            <p><strong>Poznámka:</strong> Pro správné přiřazení šablony musí záznam v XML obsahovat hodnotu v elementu <code>&lt;literarni_forma&gt;</code>. Například:
+            <ul>
+                <li>Pro článek: <code>&lt;literarni_forma&gt;ČLÁNEK&lt;/literarni_forma&gt;</code></li>
+                <li>Pro monografii: <code>&lt;literarni_forma&gt;MONOGRAFIE&lt;/literarni_forma&gt;</code></li>
+                <li>Pro konferenční příspěvek: <code>&lt;literarni_forma&gt;KONFERENČNÍ PŘÍSPĚVEK&lt;/literarni_forma&gt;</code></li>
+            </ul>
+            Pokud hodnota neodpovídá žádné definované šabloně, použije se šablona DEFAULT.
+            </p>
             <h2>Jak použít shortcode</h2>
             <p>Vložte <code>[obd_prispevky]</code> do stránky/příspěvku. Volitelné parametry:</p>
             <ul style="list-style: disc; margin-left: 20px;">
@@ -71,9 +92,6 @@ function obd_prispevky_settings_page()
 // Vytvoříme pole placeholderů pro jeden <zaznam>
 function obd_build_placeholders($zaznam)
 {
-    // Atribut id z <zaznam id="...">
-    $id = isset($zaznam['id']) ? (string)$zaznam['id'] : '';
-
     // Autoři
     $authors = array();
     if (isset($zaznam->autor_list->autor)) {
@@ -113,10 +131,6 @@ function obd_build_placeholders($zaznam)
     $nazev = implode(' / ', $titles);
 
     // Rok, ISSN, zdroj, číslo
-    $rok   = isset($zaznam->rok)         ? (string)$zaznam->rok         : '';
-    $issn  = isset($zaznam->issn)        ? (string)$zaznam->issn        : '';
-    $zdroj = isset($zaznam->zdroj_nazev) ? (string)$zaznam->zdroj_nazev : '';
-    $cislo = isset($zaznam->cislo)       ? (string)$zaznam->cislo       : '';
 
     $first_autor = isset($zaznam->autor_list->autor[0]) ? $zaznam->autor_list->autor[0] : null;
     $jmeno = $prijmeni = $titul_pred = $titul_za = '';
@@ -127,27 +141,45 @@ function obd_build_placeholders($zaznam)
         $titul_za = isset($first_autor->titul_za) ? (string)$first_autor->titul_za : '';
     }
 
-    $misto = isset($zaznam->vydavatel_mesto) ? (string)$zaznam->vydavatel_mesto : '';
-    $nakladatel = isset($zaznam->vydavatel_nazev) ? (string)$zaznam->vydavatel_nazev : '';
-    $isbn = isset($zaznam->isbn) ? (string)$zaznam->isbn : '';
-
     return array(
-        '{id}'    => $id,
+        '{id}'    => isset($zaznam['id']) ? (string)$zaznam['id'] : '',
         '{autor}' => $autori,
         '{nazev}' => $nazev,
-        '{rok}'   => $rok,
-        '{issn}'  => $issn,
-        '{zdroj}' => $zdroj,
-        '{cislo}' => $cislo,
+        '{rok}'   => isset($zaznam->rok) ? (string)$zaznam->rok : '',
+        '{issn}'  => isset($zaznam->issn) ? (string)$zaznam->issn : '',
+        '{zdroj}' => isset($zaznam->zdroj_nazev) ? (string)$zaznam->zdroj_nazev : '',
+        '{cislo}' => isset($zaznam->cislo)       ? (string)$zaznam->cislo       : '',
         '{jmeno}' => $jmeno,
         '{prijmeni}' => $prijmeni,
         '{titul_pred}' => $titul_pred,
         '{titul_za}' => $titul_za,
-        '{misto}' => $misto,
-        '{nakladatel}' => $nakladatel,
-        '{isbn}' => $isbn,
+        '{misto}' => isset($zaznam->vydavatel_mesto) ? (string)$zaznam->vydavatel_mesto : '',
+        '{nakladatel}' => isset($zaznam->vydavatel_nazev) ? (string)$zaznam->vydavatel_nazev : '',
+        '{isbn}' => isset($zaznam->isbn) ? (string)$zaznam->isbn : '',
         '{autor_better}' => $authori_better,
+        '{literarni_forma}' => isset($zaznam->literarni_forma) ? (string)$zaznam->literarni_forma : '',
     );
+}
+
+// Nová funkce pro výběr šablony podle literární formy
+// Tato funkce vybírá šablonu podle hodnoty <literarni_forma> v XML.
+// Pokud je nastavena například hodnota "ČLÁNEK", očekává se, že v nastavení máte definovanou šablonu pro "ČLÁNEK".
+// Pokud není nalezena, zkontroluje se existence šablony DEFAULT.
+// Pokud ani ta není nastavena, použije se vestavěný fallback.
+function obd_select_template_by_type($zaznam)
+{
+    $forma = isset($zaznam->literarni_forma) ? strtoupper(trim((string)$zaznam->literarni_forma)) : '';
+    $templates_by_forma = get_option('obd_templates_by_forma', array());
+
+    if (isset($templates_by_forma[$forma]) && !empty($templates_by_forma[$forma])) {
+        return $templates_by_forma[$forma];
+    }
+
+    if (isset($templates_by_forma['DEFAULT']) && !empty($templates_by_forma['DEFAULT'])) {
+        return $templates_by_forma['DEFAULT'];
+    }
+
+    return '<span style="font-variant: small-caps;">{prijmeni}</span>, {jmeno}. <em>{nazev}</em>. {misto}: {nakladatel}, {rok}. ISBN {isbn}.';
 }
 
 // Nahradí placeholdery v šabloně
@@ -274,7 +306,8 @@ function obd_prispevky_shortcode($atts)
     // Výstup
     $output = '';
     foreach ($zaznamy as $zaznam) {
-        $output .= obd_parse_template($template, $zaznam);
+        $final_template = !empty($template) ? $template : obd_select_template_by_type($zaznam);
+        $output .= obd_parse_template($final_template, $zaznam);
     }
 
     return $output;
