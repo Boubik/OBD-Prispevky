@@ -29,16 +29,12 @@ function obd_prispevky_settings_page()
     if (isset($_POST['obd_xml_data'])) {
         update_option('obd_xml_data', stripslashes($_POST['obd_xml_data']));
     }
-    if (isset($_POST['obd_template'])) {
-        update_option('obd_template', stripslashes($_POST['obd_template']));
-    }
     if (isset($_POST['obd_templates_by_forma']) && is_array($_POST['obd_templates_by_forma'])) {
         update_option('obd_templates_by_forma', array_map('stripslashes', $_POST['obd_templates_by_forma']));
     }
 
     // Načtení hodnot
     $xml_data  = get_option('obd_xml_data', '');
-    $template  = get_option('obd_template', '');
 ?>
     <div class="wrap">
         <h1>OBD Příspěvky - Nastavení</h1>
@@ -48,16 +44,11 @@ function obd_prispevky_settings_page()
             <p>Vložte celé XML, např. &lt;zaznamy&gt;&lt;zaznam id="123"&gt;...&lt;/zaznam&gt;&lt;/zaznamy&gt;.</p>
             <textarea name="obd_xml_data" rows="10" cols="100"><?php echo esc_textarea($xml_data); ?></textarea>
 
-            <h2>Šablona výpisu (pseudo kód)</h2>
-            <p>Zde definujte, jak se má každý &lt;zaznam&gt; zobrazit.
-                Můžete používat HTML, &lt;br&gt; a placeholdery {autor}, {nazev}, {rok}, {issn}, {zdroj}, {cislo}, {id} atd.</p>
-            <textarea name="obd_template" rows="6" cols="100"><?php echo esc_textarea($template); ?></textarea>
-
             <h2>Alternativní šablony podle literární formy</h2>
             <p>Pokud chcete použít jiné šablony pro různé typy záznamů (např. ČLÁNEK, MONOGRAFIE...), zadejte je zde.</p>
             <?php
             $templates_by_forma = get_option('obd_templates_by_forma', array());
-            $form_types = ['ČLÁNEK', 'KONFERENČNÍ PŘÍSPĚVEK', 'MONOGRAFIE', 'DEFAULT'];
+            $form_types = ['ČLÁNEK', 'KONFERENČNÍ PŘÍSPĚVEK', 'MONOGRAFIE', 'VÝZKUMNÁ ZPRÁVA', 'USPOŘÁDÁNÍ', 'PŘÍSPĚVEK VE SBORNÍKU', 'DEFAULT'];
             foreach ($form_types as $form) {
                 $val = isset($templates_by_forma[$form]) ? esc_textarea($templates_by_forma[$form]) : '';
                 echo "<h3>$form</h3>";
@@ -255,7 +246,6 @@ function obd_prispevky_shortcode($atts)
 
     // Načteme uložené XML a šablonu
     $xml_data = get_option('obd_xml_data', '');
-    $template = get_option('obd_template', '');
 
     if (empty($xml_data)) {
         return '<p>Žádná XML data nejsou nastavena.</p>';
@@ -306,7 +296,7 @@ function obd_prispevky_shortcode($atts)
     // Výstup
     $output = '';
     foreach ($zaznamy as $zaznam) {
-        $final_template = !empty($template) ? $template : obd_select_template_by_type($zaznam);
+        $final_template = obd_select_template_by_type($zaznam);
         $output .= obd_parse_template($final_template, $zaznam);
     }
 
